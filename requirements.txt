@@ -1,0 +1,28 @@
+# Streamlit App
+streamlit>=1.0
+
+
+
+# TensorFlow (Windows-compatible)
+tensorflow
+
+
+# Core dependencies
+numpy==1.23.5
+Pillow
+opencv-python-headless
+matplotlib
+seaborn
+pandas
+
+# Image Processing
+opencv-python-headless
+
+# Model Training
+scikit-learn
+
+
+
+imutils==0.5.4
+flask
+
