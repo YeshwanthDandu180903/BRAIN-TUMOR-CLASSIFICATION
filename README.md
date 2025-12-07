@@ -9,10 +9,10 @@ EfficientNet-B2 classifier with a Flask UI for MRI-based tumor triage. Upload an
 - Dataset: ~7k MRIs across Training/Testing folders.
 
 ## Demo Media
-![Upload and prediction](results/Screenshot%202025-12-07%20124407.png)
-![Prediction details](results/Screenshot%202025-12-07%20124422.png)
-![PDF-ready view](results/Screenshot%202025-12-07%20124432.png)
-<video src="results/Screen%20Recording%202025-12-07%20125936.mp4" controls width="720"></video>
+![Upload and prediction](results/img1.png)
+![Prediction details](results/img2.png)
+![PDF-ready view](results/img3.png)
+<video src="results/video.mp4" controls width="720"></video>
 
 ## Features
 - Drag-and-drop MRI upload in the browser, confidence score, and disease details.
