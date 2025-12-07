@@ -1,28 +1,36 @@
-# Streamlit App
-streamlit>=1.0
-
-
-
-# TensorFlow (Windows-compatible)
-tensorflow
-
-
-# Core dependencies
+# -----------------------------
+# Core ML / DL Requirements
+# -----------------------------
+tensorflow            # CPU/GPU auto-select
 numpy==1.23.5
-Pillow
-opencv-python-headless
-matplotlib
-seaborn
 pandas
-
-# Image Processing
-opencv-python-headless
-
-# Model Training
 scikit-learn
 
-
-
+# -----------------------------
+# Image Processing
+# -----------------------------
+opencv-python-headless     # Headless for servers and Flask
+Pillow
 imutils==0.5.4
-flask
 
+# -----------------------------
+# Visualization (Optional but useful)
+# -----------------------------
+matplotlib
+seaborn
+
+# -----------------------------
+# Flask Web App
+# -----------------------------
+flask
+werkzeug
+
+# -----------------------------
+# PDF Report Generation
+# -----------------------------
+reportlab
+
+# -----------------------------
+# Streamlit (Optional UI)
+# -----------------------------
+streamlit>=1.0

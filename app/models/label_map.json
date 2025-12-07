@@ -1,0 +1,6 @@
+{
+  "Glioma": 0,
+  "Meningioma": 1,
+  "No_tumor": 2,
+  "Pituitary": 3
+}
