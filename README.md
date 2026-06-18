@@ -34,7 +34,7 @@ An end-to-end medical AI imaging project that leverages a fine-tuned **Efficient
 ### 1. Main Dashboard (Light & Dark Theme)
 The application provides a seamless, modern layout with a clean responsive grid and interactive drop zones.
 
-|  Home page | Dashboard |
+|  Home page | Result |
 | --- | --- |
 | ![Light Mode](results/img1.png) | ![Dark Mode](results/img2.png) |
 
