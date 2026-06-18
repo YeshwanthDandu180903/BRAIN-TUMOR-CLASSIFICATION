@@ -145,6 +145,81 @@ If you want to retrain the model on your dataset:
 
 ---
 
+## 🧬 Model Architecture & Mathematical Foundations
+
+To classify brain MRI scans with high precision, this project utilizes a combination of a transfer-learning-based feature extractor and a custom classification head. The decision-making process is explained visually using Grad-CAM.
+
+```mermaid
+graph TD
+    A[Input MRI Image 240x240x3] --> B[EfficientNet-B2 Base Layer ImageNet weights]
+    B --> C[Last Conv Layer top_conv output: 8x8x1408]
+    C --> D[Global Average Pooling 2D]
+    D --> E[Dropout p=0.2]
+    E --> F[Dense Output Layer Softmax]
+    F --> G[Class Probabilities 4 Classes]
+    
+    C -.-> H[Grad-CAM Heatmap Generation]
+    F -.-> H
+    H --> I[Overlay Image Visualization]
+```
+
+### 1. Feature Extraction: EfficientNet-B2 Base
+The model uses **EfficientNet-B2** initialized with pre-trained ImageNet weights. EfficientNet uses a **compound scaling** method that scales network depth ($d$), width ($w$), and resolution ($r$) uniformly using a compound coefficient $\phi$:
+
+$$d = \alpha^\phi, \quad w = \beta^\phi, \quad r = \gamma^\phi$$
+
+$$\text{subject to } \alpha \cdot \beta^2 \cdot \gamma^2 \approx 2 \quad \text{and} \quad \alpha \ge 1, \beta \ge 1, \gamma \ge 1$$
+
+where $\alpha, \beta, \gamma$ are constant coefficients determined by a small grid search on the baseline network. For EfficientNet-B2, these scaling factors optimize feature extraction from the input image dimension of $240 \times 240 \times 3$ pixels.
+
+### 2. Custom Classification Head
+The extracted convolutional feature map $F \in \mathbb{R}^{H \times W \times C}$ (where $H=8$, $W=8$, and $C=1408$ for B2 at this resolution) is passed through custom classification layers:
+
+1. **Global Average Pooling (GAP)**: Reduces the feature map spatial dimensions to a 1D vector $v \in \mathbb{R}^C$ by averaging pixel values across each channel:
+   $$v_c = \frac{1}{H \times W} \sum_{i=1}^H \sum_{j=1}^W F_{i,j,c}$$
+
+2. **Dropout Regularization**: Prevents overfitting by randomly zeroing out elements of the GAP output with a probability $p = 0.2$ during training:
+   $$\tilde{v} = v \odot m, \quad m_c \sim \text{Bernoulli}(1-p)$$
+
+3. **Dense Layer & Softmax Activation**: Computes the raw logits $z = W\tilde{v} + b$ and maps them to a probability distribution $\hat{y}$ over $K = 4$ classes:
+   $$\hat{y}_c = \text{Softmax}(z)_c = \frac{e^{z_c}}{\sum_{j=1}^{K} e^{z_j}}$$
+   where $c \in \{ \text{Glioma}, \text{Meningioma}, \text{Pituitary}, \text{No Tumor} \}$.
+
+### 3. Optimization & Training Loss
+During training, parameters are optimized using the **Categorical Cross-Entropy Loss**:
+
+$$\mathcal{L} = -\sum_{c=1}^{K} y_c \log(\hat{y}_c)$$
+
+where $y_c$ is the binary ground-truth label (one-hot encoded) and $\hat{y}_c$ is the predicted probability for class $c$.
+
+The parameters $\theta = \{W, b, \dots\}$ are updated using the **Adam Optimizer**, which calculates adaptive learning rates for each parameter based on estimates of first and second moments of the gradients:
+
+$$m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t$$
+$$v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2$$
+$$\hat{m}_t = \frac{m_t}{1 - \beta_1^t}, \quad \hat{v}_t = \frac{v_t}{1 - \beta_2^t}$$
+$$\theta_t = \theta_{t-1} - \frac{\eta}{\sqrt{\hat{v}_t} + \epsilon} \hat{m}_t$$
+
+where:
+- $g_t = \nabla_\theta \mathcal{L}_t$ is the gradient at step $t$
+- $\eta$ is the learning rate (initially $0.001$, dynamically scaled by `ReduceLROnPlateau` by $0.3$ on plateau)
+- $\beta_1 = 0.9$ and $\beta_2 = 0.999$ are exponential decay rates for moment estimates
+- $\epsilon = 10^{-7}$ is a small scalar to prevent division by zero
+
+### 4. Explainable AI: Grad-CAM
+To provide visual explanations of model decisions, **Gradient-Weighted Class Activation Mapping (Grad-CAM)** is used. Let $A^k$ represent the activation map of channel $k$ in the final convolutional layer of the model (here, `top_conv`).
+
+1. **Gradient Computation**: Compute the gradient of the score for class $c$, $y^c$ (before softmax), with respect to the activation maps $A^k$:
+   $$\frac{\partial y^c}{\partial A^k}$$
+
+2. **Neuron Importance Weights**: Compute the channel-wise importance weight $\alpha_k^c$ using global average pooling:
+   $$\alpha_k^c = \frac{1}{Z} \sum_{i=1}^H \sum_{j=1}^W \frac{\partial y^c}{\partial A_{i,j}^k}$$
+   where $Z = H \times W$ is the spatial area of the feature map.
+
+3. **Coarse Saliency Map Generation**: Compute a weighted combination of forward activation maps, followed by a ReLU activation to focus only on features that positively influence class $c$:
+   $$L_{\text{Grad-CAM}}^c = \text{ReLU}\left( \sum_k \alpha_k^c A^k \right)$$
+
+---
+
 ## 📊 Results & Evaluation
 
 The model was trained using transfer learning on `EfficientNet-B2` with ImageNet initialization, utilizing two-stage fine-tuning:
